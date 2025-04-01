@@ -1,450 +1,546 @@
-
-        // الوظائف العامة
-        document.addEventListener('DOMContentLoaded', function() {
-            // التنقل بين الأقسام
-            const navButtons = document.querySelectorAll('.nav-btn');
-            const sections = document.querySelectorAll('.section');
+"سُبْحَانَ اللَّهِ (33 مرة)، وَالْحَمْدُ لِلَّهِ (33 مرة)، وَاللَّهُ أَكْبَرُ (33 مرة)، ثم يقول: لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+                "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْجُبْنِ، وَأَعُوذُ بِكَ مِنَ الْبُخْلِ، وَأَعُوذُ بِكَ مِنْ أَنْ أُرَدَّ إِلَى أَرْذَلِ الْعُمُرِ، وَأَعُوذُ بِكَ مِنْ فِتْنَةِ الدُّنْيَا وَعَذَابِ الْقَبْرِ"
+            ];
             
-            navButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const sectionId = this.getAttribute('data-section');
-                    
-                    // إزالة الصنف النشط من جميع الأزرار
-                    navButtons.forEach(btn => btn.classList.remove('active'));
-                    
-                    // إضافة الصنف النشط للزر المختار
-                    this.classList.add('active');
-                    
-                    // إخفاء جميع الأقسام
-                    sections.forEach(section => section.classList.add('hidden'));
-                    
-                    // إظهار القسم المختار
-                    document.getElementById(sectionId).classList.remove('hidden');
+            displayAdhkar('after-prayer-adhkar-content', afterPrayerAdhkar, true);
+        } catch (error) {
+            console.error('خطأ في تحميل الأذكار:', error);
+            showToast('حدث خطأ أثناء تحميل الأذكار', 'error');
+        }
+    };
+    
+    const displayAdhkar = function(elementId, adhkarList, addCopyButton = false) {
+        const container = document.getElementById(elementId);
+        if (!container) {
+            console.warn(`عنصر الأذكار بمعرّف ${elementId} غير موجود`);
+            return;
+        }
+        
+        // إنشاء عناصر الأذكار
+        container.innerHTML = '';
+        
+        adhkarList.forEach((dhikr, index) => {
+            const dhikrCard = document.createElement('div');
+            dhikrCard.className = 'dhikr-card';
+            
+            const dhikrText = document.createElement('p');
+            dhikrText.className = 'dhikr-text';
+            dhikrText.textContent = dhikr;
+            
+            dhikrCard.appendChild(dhikrText);
+            
+            // إضافة زر نسخ إذا كان مطلوبًا
+            if (addCopyButton) {
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                copyBtn.title = 'نسخ';
+                
+                copyBtn.addEventListener('click', function() {
+                    copyToClipboard(dhikr);
+                    showToast('تم نسخ الذكر', 'success');
                 });
-            });
-            
-            // تهيئة البيانات عند تحميل الصفحة
-            loadAdhkar();
-            loadQuranData();
-            loadDuas();
-            
-            // تفعيل قسم التسبيح مبدئيًا
-            document.querySelector('.nav-btn[data-section="tasbih"]').click();
-        });
-
-        // وظائف التسبيح
-        let tasbihCount = 0;
-        
-        document.getElementById('increment-tasbih').addEventListener('click', function() {
-            tasbihCount++;
-            document.getElementById('tasbih-count').innerText = tasbihCount;
-            
-            // إظهار رسالة عند وصول التسبيح إلى أعداد معينة
-            if (tasbihCount % 33 === 0) {
-                showSuccessMessage(`أحسنت! لقد أكملت ${tasbihCount / 33} دورة كاملة`);
-            }
-        });
-        
-        document.getElementById('reset-tasbih').addEventListener('click', function() {
-            tasbihCount = 0;
-            document.getElementById('tasbih-count').innerText = tasbihCount;
-        });
-        
-        document.getElementById('tasbih-type').addEventListener('change', function() {
-            const selectedTasbih = this.value;
-            document.getElementById('current-tasbih').innerText = selectedTasbih;
-            // إعادة تعيين العداد عند تغيير نوع التسبيح
-            tasbihCount = 0;
-            document.getElementById('tasbih-count').innerText = tasbihCount;
-        });
-        
-        // وظيفة إظهار رسالة النجاح
-        function showSuccessMessage(message) {
-            const msgElement = document.getElementById('success-message') || document.createElement('div');
-            if (!document.getElementById('success-message')) {
-                msgElement.id = 'success-message';
-                document.querySelector('.tasbih-container').appendChild(msgElement);
+                
+                dhikrCard.appendChild(copyBtn);
             }
             
-            msgElement.innerText = message;
-            msgElement.style.display = 'block';
+            // إضافة زر مشاركة للذكر
+            const shareBtn = document.createElement('button');
+            shareBtn.className = 'share-btn';
+            shareBtn.innerHTML = '<i class="fas fa-share-alt"></i>';
+            shareBtn.title = 'مشاركة';
             
-            setTimeout(() => {
-                msgElement.style.display = 'none';
-            }, 3000);
-        }
-
-        // وظائف الأذكار
-        async function loadAdhkar() {
-            try {
-                // أذكار الصباح
-                const morningResponse = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Cairo&country=Egypt');
-                const morningData = await morningResponse.json();
-                
-                // هنا سنستخدم بيانات وهمية لأن API المستخدم لا يوفر أذكار فعلية
-                const morningAdhkar = [
-                    "اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ النُّشُورُ",
-                    "أَصْبَحْنَا عَلَى فِطْرَةِ الإِسْلاَمِ، وَعَلَى كَلِمَةِ الإِخْلاَصِ، وَعَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ صَلَّى اللهُ عَلَيْهِ وَسَلَّمَ، وَعَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ حَنِيفًا مُسْلِمًا وَمَا كَانَ مِنَ المُشْرِكِينَ",
-                    "سُبْحَانَ اللهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ (ثلاثَ مرَّاتٍ)"
-                ];
-                
-                displayAdhkar('morning-adhkar-content', morningAdhkar);
-                
-                // أذكار المساء
-                const eveningAdhkar = [
-                    "اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ الْمَصِيرُ",
-                    "اللَّهُمَّ مَا أَمْسَى بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لَا شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ",
-                    "أَعُوذُ بِكَلِمَاتِ اللهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ (ثلاثَ مرَّاتٍ)"
-                ];
-                
-                displayAdhkar('evening-adhkar-content', eveningAdhkar);
-                
-                // أذكار النوم
-                const sleepAdhkar = [
-                    "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا",
-                    "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا، وَكَفَانَا، وَآوَانَا، فَكَمْ مِمَّنْ لاَ كَافِيَ لَهُ وَلاَ مُؤْوِيَ",
-                    "اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ"
-                ];
-                
-                displayAdhkar('sleep-adhkar-content', sleepAdhkar);
-                
-            } catch (error) {
-                console.error('Error loading adhkar:', error);
-                document.getElementById('morning-adhkar-content').innerText = 'حدث خطأ أثناء تحميل الأذكار';
-                document.getElementById('evening-adhkar-content').innerText = 'حدث خطأ أثناء تحميل الأذكار';
-                document.getElementById('sleep-adhkar-content').innerText = 'حدث خطأ أثناء تحميل الأذكار';
-            }
-        }
-        
-        function displayAdhkar(elementId, adhkarList) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = '';
-            
-            adhkarList.forEach((dhikr, index) => {
-                const dhikrElement = document.createElement('p');
-                dhikrElement.innerText = `${index + 1}. ${dhikr}`;
-                container.appendChild(dhikrElement);
-            });
-        }
-        
-        // وظائف القرآن
-        async function loadQuranData() {
-            try {
-                // تحميل قائمة السور
-                const surahsResponse = await fetch('http://api.alquran.cloud/v1/surah');
-                const surahsData = await surahsResponse.json();
-                
-                if (surahsData.code === 200) {
-                    displaySurahs(surahsData.data);
-                } else {
-                    throw new Error('فشل في تحميل بيانات السور');
-                }
-                
-                // تحميل آية اليوم
-                const randomSurah = Math.floor(Math.random() * 114) + 1;
-                const ayahResponse = await fetch(`http://api.alquran.cloud/v1/ayah/${randomSurah}:1/ar`);
-                const ayahData = await ayahResponse.json();
-                
-                if (ayahData.code === 200) {
-                    document.getElementById('ayah-of-day').innerHTML = `
-                        <p class="ayah">${ayahData.data.text}</p>
-                        <p class="surah-info">سورة ${ayahData.data.surah.name} - آية ${ayahData.data.numberInSurah}</p>
-                    `;
-                } else {
-                    throw new Error('فشل في تحميل آية اليوم');
-                }
-                
-            } catch (error) {
-                console.error('Error loading Quran data:', error);
-                document.getElementById('quran-surahs').innerText = 'حدث خطأ أثناء تحميل بيانات القرآن';
-                document.getElementById('ayah-of-day').innerText = 'حدث خطأ أثناء تحميل آية اليوم';
-            }
-        }
-        
-        function displaySurahs(surahs) {
-            const container = document.getElementById('quran-surahs');
-            container.innerHTML = '';
-            
-            // إنشاء عنصر select للسور
-            const select = document.createElement('select');
-            select.className = 'tasbih-select';
-            select.id = 'surah-select';
-            
-            surahs.forEach(surah => {
-                const option = document.createElement('option');
-                option.value = surah.number;
-                option.innerText = `${surah.number}. ${surah.name} - ${surah.englishName}`;
-                select.appendChild(option);
-            });
-            
-            container.appendChild(select);
-            
-            // إضافة زر لعرض السورة
-            const button = document.createElement('button');
-            button.className = 'tasbih-btn';
-            button.style.marginTop = '10px';
-            button.innerText = 'عرض السورة';
-            button.addEventListener('click', () => {
-                const surahNumber = document.getElementById('surah-select').value;
-                window.open(`https://quran.com/${surahNumber}`, '_blank');
-            });
-            
-            container.appendChild(button);
-        }
-// وظائف الأدعية
-        async function loadDuas() {
-            try {
-                // هنا سنستخدم بيانات وهمية لأن API المستخدم لا يوفر أدعية فعلية
-                const duas = [
-                    {
-                        title: "دعاء الاستفتاح",
-                        text: "اللَّهُمَّ بَاعِدْ بَيْنِي وَبَيْنَ خَطَايَايَ كَمَا بَاعَدْتَ بَيْنَ الْمَشْرِقِ وَالْمَغْرِبِ، اللَّهُمَّ نَقِّنِي مِنْ خَطَايَايَ كَمَا يُنَقَّى الثَّوْبُ الْأَبْيَضُ مِنَ الدَّنَسِ، اللَّهُمَّ اغْسِلْنِي مِنْ خَطَايَايَ بِالثَّلْجِ وَالْمَاءِ وَالْبَرَدِ"
-                    },
-                    {
-                        title: "دعاء السفر",
-                        text: "اللَّهُ أَكْبَرُ، اللَّهُ أَكْبَرُ، اللَّهُ أَكْبَرُ، سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ، وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ، اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَذَا البِرَّ وَالتَّقْوَى، وَمِنَ العَمَلِ مَا تَرْضَى، اللَّهُمَّ هَوِّنْ عَلَيْنَا سَفَرَنَا هَذَا وَاطْوِ عَنَّا بُعْدَهُ، اللَّهُمَّ أَنْتَ الصَّاحِبُ فِي السَّفَرِ، وَالخَليفَةُ فِي الأَهْلِ، اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ وَعْثَاءِ السَّفَرِ، وَكَآبَةِ المَنْظَرِ، وَسُوءِ المُنْقَلَبِ فِي المَالِ وَالأَهْلِ"
-                    },
-                    {
-                        title: "دعاء الاستخارة",
-                        text: "اللَّهُمَّ إِنِّي أَسْتَخِيرُكَ بِعِلْمِكَ، وَأَسْتَقْدِرُكَ بِقُدْرَتِكَ، وَأَسْأَلُكَ مِنْ فَضْلِكَ العَظِيمِ، فَإِنَّكَ تَقْدِرُ وَلاَ أَقْدِرُ، وَتَعْلَمُ وَلاَ أَعْلَمُ، وَأَنْتَ عَلاَّمُ الغُيُوبِ، اللَّهُمَّ إِنْ كُنْتَ تَعْلَمُ أَنَّ هَذَا الأَمْرَ خَيْرٌ لِي فِي دِينِي وَمَعَاشِي وَعَاقِبَةِ أَمْرِي - أَوْ قَالَ: عَاجِلِ أَمْرِي وَآجِلِهِ - فَاقْدُرْهُ لِي وَيَسِّرْهُ لِي ثُمَّ بَارِكْ لِي فِيهِ، وَإِنْ كُنْتَ تَعْلَمُ أَنَّ هَذَا الأَمْرَ شَرٌّ لِي فِي دِينِي وَمَعَاشِي وَعَاقِبَةِ أَمْرِي - أَوْ قَالَ: عَاجِلِ أَمْرِي وَآجِلِهِ - فَاصْرِفْهُ عَنِّي وَاصْرِفْنِي عَنْهُ، وَاقْدُرْ لِي الخَيْرَ حَيْثُ كَانَ، ثُمَّ أَرْضِنِي بِهِ"
-                    },
-                    {
-                        title: "دعاء الهم والحزن",
-                        text: "اللَّهُمَّ إِنِّي عَبْدُكَ، ابْنُ عَبْدِكَ، ابْنُ أَمَتِكَ، نَاصِيَتِي بِيَدِكَ، مَاضٍ فِيَّ حُكْمُكَ، عَدْلٌ فِيَّ قَضَاؤُكَ، أَسْأَلُكَ بِكُلِّ اسْمٍ هُوَ لَكَ، سَمَّيْتَ بِهِ نَفْسَكَ، أَوْ أَنْزَلْتَهُ فِي كِتَابِكَ، أَوْ عَلَّمْتَهُ أَحَدًا مِنْ خَلْقِكَ، أَوِ اسْتَأْثَرْتَ بِهِ فِي عِلْمِ الغَيْبِ عِنْدَكَ، أَنْ تَجْعَلَ القُرْآنَ رَبِيعَ قَلْبِي، وَنُورَ صَدْرِي، وَجَلَاءَ حُزْنِي، وَذَهَابَ هَمِّي"
-                    },
-                    {
-                        title: "دعاء دخول المسجد",
-                        text: "أَعُوذُ بِاللهِ العَظِيمِ، وَبِوَجْهِهِ الكَرِيمِ، وَسُلْطَانِهِ القَدِيمِ، مِنَ الشَّيْطَانِ الرَّجِيمِ، بِسْمِ اللهِ، وَالصَّلَاةُ وَالسَّلَامُ عَلَى رَسُولِ اللهِ، اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ"
-                    }
-                ];
-                
-                displayDuas(duas);
-                
-            } catch (error) {
-                console.error('Error loading duas:', error);
-                document.getElementById('duas-container').innerText = 'حدث خطأ أثناء تحميل الأدعية';
-            }
-        }
-        
-        function displayDuas(duasList) {
-            const container = document.getElementById('duas-container');
-            container.innerHTML = '';
-            
-            duasList.forEach(dua => {
-                const duaCard = document.createElement('div');
-                duaCard.className = 'card';
-                
-                const title = document.createElement('h3');
-                title.innerText = dua.title;
-                
-                const text = document.createElement('p');
-                text.innerText = dua.text;
-                
-                duaCard.appendChild(title);
-                duaCard.appendChild(text);
-                container.appendChild(duaCard);
-            });
-        }
-        
-        // وظائف المساعد الإسلامي باستخدام الذكاء الاصطناعي
-        const API_KEY = 'AIzaSyDjMwL_OQEy-qCvBj8SuLH1vjERqyCRY3w';
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-        
-        document.getElementById('ai-submit').addEventListener('click', async function() {
-            const userInput = document.getElementById('ai-input').value.trim();
-            
-            if (!userInput) {
-                alert('الرجاء كتابة سؤال أولاً');
-                return;
-            }
-            
-            // إظهار مؤشر التحميل
-            document.getElementById('ai-loader').style.display = 'block';
-            document.getElementById('ai-response').innerText = 'جاري معالجة السؤال...';
-            
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: "أجب على السؤال التالي مع الالتزام بالضوابط الإسلامية والأدلة من القرآن والسنة إن أمكن: " + userInput
-                            }]
-                        }]
+            shareBtn.addEventListener('click', function() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'ذكر من تطبيق المسلم',
+                        text: dhikr
                     })
+                    .then(() => console.log('تمت المشاركة بنجاح'))
+                    .catch((error) => console.log('خطأ في المشاركة:', error));
+                } else {
+                    copyToClipboard(dhikr);
+                    showToast('تم نسخ الذكر، يمكنك مشاركته الآن', 'info');
+                }
+            });
+            
+            dhikrCard.appendChild(shareBtn);
+            
+            container.appendChild(dhikrCard);
+        });
+    };
+    
+    // ------------------- وحدة الأدعية -------------------
+    const loadDuas = function() {
+        const duasContainer = document.getElementById('duas-content');
+        if (!duasContainer) {
+            console.warn('عنصر الأدعية غير موجود');
+            return;
+        }
+        
+        const duas = [
+            {
+                title: 'دعاء الاستخارة',
+                text: 'اللَّهُمَّ إِنِّي أَسْتَخِيرُكَ بِعِلْمِكَ، وَأَسْتَقْدِرُكَ بِقُدْرَتِكَ، وَأَسْأَلُكَ مِنْ فَضْلِكَ الْعَظِيمِ، فَإِنَّكَ تَقْدِرُ وَلَا أَقْدِرُ، وَتَعْلَمُ وَلَا أَعْلَمُ، وَأَنْتَ عَلَّامُ الْغُيُوبِ، اللَّهُمَّ إِنْ كُنْتَ تَعْلَمُ أَنَّ هَذَا الْأَمْرَ خَيْرٌ لِي فِي دِينِي وَمَعَاشِي وَعَاقِبَةِ أَمْرِي فَاقْدُرْهُ لِي وَيَسِّرْهُ لِي ثُمَّ بَارِكْ لِي فِيهِ، وَإِنْ كُنْتَ تَعْلَمُ أَنَّ هَذَا الْأَمْرَ شَرٌّ لِي فِي دِينِي وَمَعَاشِي وَعَاقِبَةِ أَمْرِي فَاصْرِفْهُ عَنِّي وَاصْرِفْنِي عَنْهُ وَاقْدُرْ لِي الْخَيْرَ حَيْثُ كَانَ ثُمَّ أَرْضِنِي بِهِ'
+            },
+            {
+                title: 'دعاء الهم والحزن',
+                text: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَالْعَجْزِ وَالْكَسَلِ، وَالْبُخْلِ وَالْجُبْنِ، وَضَلَعِ الدَّيْنِ، وَغَلَبَةِ الرِّجَالِ'
+            },
+            {
+                title: 'دعاء التيسير',
+                text: 'اللَّهُمَّ لَا سَهْلَ إِلَّا مَا جَعَلْتَهُ سَهْلًا، وَأَنْتَ تَجْعَلُ الْحَزْنَ إِذَا شِئْتَ سَهْلًا'
+            },
+            {
+                title: 'دعاء للوالدين',
+                text: 'رَبِّ ارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا'
+            },
+            {
+                title: 'دعاء دخول المسجد',
+                text: 'اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ'
+            },
+            {
+                title: 'دعاء الخروج من المسجد',
+                text: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ'
+            },
+            {
+                title: 'دعاء السفر',
+                text: 'اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَذَا الْبِرَّ وَالتَّقْوَى، وَمِنَ الْعَمَلِ مَا تَرْضَى، اللَّهُمَّ هَوِّنْ عَلَيْنَا سَفَرَنَا هَذَا وَاطْوِ عَنَّا بُعْدَهُ، اللَّهُمَّ أَنْتَ الصَّاحِبُ فِي السَّفَرِ، وَالْخَلِيفَةُ فِي الْأَهْلِ، اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ وَعْثَاءِ السَّفَرِ، وَكَآبَةِ الْمَنْظَرِ، وَسُوءِ الْمُنْقَلَبِ فِي الْمَالِ وَالْأَهْلِ'
+            }
+        ];
+        
+        duasContainer.innerHTML = '';
+        
+        duas.forEach(dua => {
+            const duaCard = document.createElement('div');
+            duaCard.className = 'dua-card';
+            
+            const duaTitle = document.createElement('h3');
+            duaTitle.className = 'dua-title';
+            duaTitle.textContent = dua.title;
+            
+            const duaText = document.createElement('p');
+            duaText.className = 'dua-text';
+            duaText.textContent = dua.text;
+            
+            // إضافة أزرار النسخ والمشاركة
+            const actions = document.createElement('div');
+            actions.className = 'dua-actions';
+            
+            // زر النسخ
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'dua-btn';
+            copyBtn.innerHTML = '<i class="fas fa-copy"></i> نسخ';
+            copyBtn.addEventListener('click', function() {
+                copyToClipboard(dua.text);
+                showToast('تم نسخ الدعاء', 'success');
+            });
+            
+            // زر المشاركة
+            const shareBtn = document.createElement('button');
+            shareBtn.className = 'dua-btn';
+            shareBtn.innerHTML = '<i class="fas fa-share-alt"></i> مشاركة';
+            shareBtn.addEventListener('click', function() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: dua.title,
+                        text: dua.text
+                    })
+                    .then(() => console.log('تمت المشاركة بنجاح'))
+                    .catch((error) => console.log('خطأ في المشاركة:', error));
+                } else {
+                    copyToClipboard(dua.text);
+                    showToast('تم نسخ الدعاء، يمكنك مشاركته الآن', 'info');
+                }
+            });
+            
+            // زر الاستماع (تحويل النص إلى كلام)
+            const listenBtn = document.createElement('button');
+            listenBtn.className = 'dua-btn';
+            listenBtn.innerHTML = '<i class="fas fa-volume-up"></i> استماع';
+            listenBtn.addEventListener('click', function() {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(dua.text);
+                    utterance.lang = 'ar';
+                    speechSynthesis.speak(utterance);
+                } else {
+                    showToast('متصفحك لا يدعم ميزة تحويل النص إلى كلام', 'warning');
+                }
+            });
+            
+            actions.appendChild(copyBtn);
+            actions.appendChild(shareBtn);
+            actions.appendChild(listenBtn);
+            
+            duaCard.appendChild(duaTitle);
+            duaCard.appendChild(duaText);
+            duaCard.appendChild(actions);
+            
+            duasContainer.appendChild(duaCard);
+        });
+    };
+    
+    // ------------------- وحدة القرآن الكريم -------------------
+    const loadQuranData = async function() {
+        try {
+            // تحميل قائمة السور
+            const surahContainer = document.getElementById('quran-content');
+            if (!surahContainer) return;
+            
+            surahContainer.innerHTML = '<div class="loader"></div>';
+            
+            const response = await fetchWithTimeout(`${QURAN_API_BASE_URL}/surah`, {
+                timeout: 5000
+            });
+            
+            if (!response.ok) {
+                throw new Error(`خطأ في الاستجابة: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.code === 200 && data.data) {
+                const surahs = data.data;
+                
+                surahContainer.innerHTML = '';
+                
+                // إنشاء عنصر البحث
+                const searchContainer = document.createElement('div');
+                searchContainer.className = 'search-container';
+                
+                const searchInput = document.createElement('input');
+                searchInput.type = 'text';
+                searchInput.id = 'quran-search';
+                searchInput.className = 'search-input';
+                searchInput.placeholder = 'ابحث عن سورة...';
+                
+                searchInput.addEventListener('input', function() {
+                    const query = this.value.trim().toLowerCase();
+                    const surahCards = document.querySelectorAll('.surah-card');
+                    
+                    surahCards.forEach(card => {
+                        const surahName = card.querySelector('.surah-name').textContent.toLowerCase();
+                        if (surahName.includes(query)) {
+                            card.style.display = 'flex';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
                 });
                 
-                const data = await response.json();
+                searchContainer.appendChild(searchInput);
+                surahContainer.appendChild(searchContainer);
                 
-                if (data.candidates && data.candidates[0].content) {
-                    document.getElementById('ai-response').innerText = data.candidates[0].content.parts[0].text;
-                } else {
-                    throw new Error('لم يتم الحصول على إجابة من المساعد');
+                // إنشاء حاوية لبطاقات السور
+                const surahGrid = document.createElement('div');
+                surahGrid.className = 'surah-grid';
+                
+                surahs.forEach(surah => {
+                    const surahCard = document.createElement('div');
+                    surahCard.className = 'surah-card';
+                    surahCard.setAttribute('data-surah-id', surah.number);
+                    
+                    const surahName = document.createElement('div');
+                    surahName.className = 'surah-name';
+                    surahName.textContent = `${surah.name}`;
+                    
+                    const surahInfo = document.createElement('div');
+                    surahInfo.className = 'surah-info';
+                    surahInfo.textContent = `${surah.numberOfAyahs} آية - ${surah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}`;
+                    
+                    surahCard.appendChild(surahName);
+                    surahCard.appendChild(surahInfo);
+                    
+                    // إضافة مستمع الحدث للنقر
+                    surahCard.addEventListener('click', function() {
+                        const surahId = this.getAttribute('data-surah-id');
+                        loadSurahContent(surahId);
+                    });
+                    
+                    surahGrid.appendChild(surahCard);
+                });
+                
+                surahContainer.appendChild(surahGrid);
+            } else {
+                throw new Error('لم يتم العثور على بيانات القرآن');
+            }
+        } catch (error) {
+            console.error('خطأ في تحميل بيانات القرآن:', error);
+            const quranContainer = document.getElementById('quran-content');
+            if (quranContainer) {
+                quranContainer.innerHTML = `
+                    <p class="error-message">حدث خطأ أثناء تحميل بيانات القرآن: ${error.message}</p>
+                    <button id="retry-quran-btn" class="tasbih-btn">إعادة المحاولة</button>
+                `;
+                
+                document.getElementById('retry-quran-btn').addEventListener('click', loadQuranData);
+            }
+        }
+    };
+    
+    const loadSurahContent = async function(surahId) {
+        try {
+            // إنشاء قسم عرض السورة إذا لم يكن موجودًا
+            let surahViewSection = document.getElementById('surah-view');
+            if (!surahViewSection) {
+                surahViewSection = document.createElement('section');
+                surahViewSection.id = 'surah-view';
+                surahViewSection.className = 'section hidden';
+                
+                document.querySelector('main').appendChild(surahViewSection);
+            }
+            
+            surahViewSection.innerHTML = '<div class="loader"></div>';
+            
+            // إظهار قسم عرض السورة
+            document.getElementById('quran').classList.add('hidden');
+            surahViewSection.classList.remove('hidden');
+            
+            // تحميل محتوى السورة
+            const response = await fetchWithTimeout(`${QURAN_API_BASE_URL}/surah/${surahId}`, {
+                timeout: 5000
+            });
+            
+            if (!response.ok) {
+                throw new Error(`خطأ في الاستجابة: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.code === 200 && data.data) {
+                const surah = data.data;
+                
+                // إنشاء واجهة عرض السورة
+                let surahContent = `
+                    <div class="surah-header">
+                        <button id="back-to-quran" class="btn-back">
+                            <i class="fas fa-arrow-right"></i> العودة إلى قائمة السور
+                        </button>
+                        <h2>${surah.name}</h2>
+                        <div class="surah-controls">
+                            <button id="toggle-translation" class="btn">عرض الترجمة</button>
+                            <select id="font-size-select" class="select">
+                                <option value="small">خط صغير</option>
+                                <option value="medium" selected>خط متوسط</option>
+                                <option value="large">خط كبير</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="bismillah">﴿ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ﴾</div>
+                    <div class="ayahs-container" id="ayahs-container">`;
+                
+                // إضافة الآيات
+                surah.ayahs.forEach(ayah => {
+                    surahContent += `
+                        <div class="ayah-item" data-ayah-number="${ayah.numberInSurah}">
+                            <div class="ayah-text">${ayah.text} <span class="ayah-number">﴿${ayah.numberInSurah}﴾</span></div>
+                            <div class="ayah-translation hidden"></div>
+                            <div class="ayah-actions">
+                                <button class="ayah-action-btn play-btn" title="استماع"><i class="fas fa-play"></i></button>
+                                <button class="ayah-action-btn bookmark-btn" title="إضافة علامة"><i class="fas fa-bookmark"></i></button>
+                                <button class="ayah-action-btn copy-btn" title="نسخ"><i class="fas fa-copy"></i></button>
+                                <button class="ayah-action-btn share-btn" title="مشاركة"><i class="fas fa-share-alt"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                surahContent += `</div>`;
+                
+                // إضافة أزرار التنقل بين السور
+                surahContent += `
+                    <div class="surah-navigation">
+                        ${Number(surahId) > 1 ? `<button id="prev-surah" data-surah-id="${Number(surahId) - 1}" class="nav-surah-btn"><i class="fas fa-arrow-right"></i> السورة السابقة</button>` : ''}
+                        ${Number(surahId) < 114 ? `<button id="next-surah" data-surah-id="${Number(surahId) + 1}" class="nav-surah-btn">السورة التالية <i class="fas fa-arrow-left"></i></button>` : ''}
+                    </div>
+                `;
+                
+                surahViewSection.innerHTML = surahContent;
+                
+                // إضافة مستمعي الأحداث
+                document.getElementById('back-to-quran').addEventListener('click', function() {
+                    document.getElementById('quran').classList.remove('hidden');
+                    document.getElementById('surah-view').classList.add('hidden');
+                });
+                
+                // التبديل بين عرض الترجمة وإخفائها
+                document.getElementById('toggle-translation').addEventListener('click', function() {
+                    const translationElements = document.querySelectorAll('.ayah-translation');
+                    const showTranslation = translationElements[0].classList.contains('hidden');
+                    
+                    translationElements.forEach(el => {
+                        if (showTranslation) {
+                            el.classList.remove('hidden');
+                            this.textContent = 'إخفاء الترجمة';
+                            
+                            // تحميل الترجمة إذا كانت فارغة
+                            if (el.textContent.trim() === '') {
+                                const ayahItem = el.closest('.ayah-item');
+                                const ayahNumber = ayahItem.getAttribute('data-ayah-number');
+                                loadAyahTranslation(surahId, ayahNumber, el);
+                            }
+                        } else {
+                            el.classList.add('hidden');
+                            this.textContent = 'عرض الترجمة';
+                        }
+                    });
+                });
+                
+                // تغيير حجم الخط
+                document.getElementById('font-size-select').addEventListener('change', function() {
+                    const container = document.getElementById('ayahs-container');
+                    container.className = 'ayahs-container ' + this.value;
+                });
+                
+                // إضافة وظائف للأزرار
+                document.querySelectorAll('.play-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const ayahItem = this.closest('.ayah-item');
+                        const ayahNumber = ayahItem.getAttribute('data-ayah-number');
+                        playAyahAudio(surahId, ayahNumber);
+                    });
+                });
+                
+                document.querySelectorAll('.bookmark-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const ayahItem = this.closest('.ayah-item');
+                        const ayahNumber = ayahItem.getAttribute('data-ayah-number');
+                        toggleBookmark(surahId, ayahNumber, ayahItem.querySelector('.ayah-text').textContent);
+                        
+                        // تغيير لون الزر
+                        this.classList.toggle('active');
+                    });
+                });
+                
+                document.querySelectorAll('.copy-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const ayahText = this.closest('.ayah-item').querySelector('.ayah-text').textContent;
+                        copyToClipboard(ayahText);
+                        showToast('تم نسخ الآية', 'success');
+                    });
+                });
+                
+                document.querySelectorAll('.share-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const ayahText = this.closest('.ayah-item').querySelector('.ayah-text').textContent;
+                        const surahName = document.querySelector('.surah-header h2').textContent;
+                        
+                        if (navigator.share) {
+                            navigator.share({
+                                title: `سورة ${surahName}`,
+                                text: ayahText
+                            })
+                            .then(() => console.log('تمت المشاركة بنجاح'))
+                            .catch((error) => console.log('خطأ في المشاركة:', error));
+                        } else {
+                            copyToClipboard(ayahText);
+                            showToast('تم نسخ الآية، يمكنك مشاركتها الآن', 'info');
+                        }
+                    });
+                });
+                
+                // أزرار التنقل بين السور
+                const prevSurahBtn = document.getElementById('prev-surah');
+                if (prevSurahBtn) {
+                    prevSurahBtn.addEventListener('click', function() {
+                        const surahId = this.getAttribute('data-surah-id');
+                        loadSurahContent(surahId);
+                    });
                 }
                 
-            } catch (error) {
-                console.error('Error with AI assistant:', error);
-                document.getElementById('ai-response').innerText = 'حدث خطأ أثناء معالجة السؤال. يرجى المحاولة مرة أخرى لاحقًا.';
-            } finally {
-                // إخفاء مؤشر التحميل
-                document.getElementById('ai-loader').style.display = 'none';
-            }
-        });
-        
-        // استمع لضغط مفتاح Enter في حقل الإدخال
-        document.getElementById('ai-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('ai-submit').click();
-            }
-        });
-        
-        // إضافة ميزة التحويل التلقائي لوضع الليل/النهار
-        function checkDayNightMode() {
-            const now = new Date();
-            const hours = now.getHours();
-            
-            // تطبيق وضع الليل من 6 مساءً حتى 6 صباحًا
-            if (hours >= 18 || hours < 6) {
-                document.body.style.background = 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)';
-                document.body.style.color = '#e2e8f0';
+                const nextSurahBtn = document.getElementById('next-surah');
+                if (nextSurahBtn) {
+                    nextSurahBtn.addEventListener('click', function() {
+                        const surahId = this.getAttribute('data-surah-id');
+                        loadSurahContent(surahId);
+                    });
+                }
                 
-                // تغيير ألوان البطاقات
-                const cards = document.querySelectorAll('.card');
-                cards.forEach(card => {
-                    card.style.backgroundColor = '#2d3748';
-                    card.style.color = '#e2e8f0';
-                });
+                // العلامات المرجعية - تحقق مما إذا كانت الآيات مرجعية بالفعل
+                markBookmarkedAyahs(surahId);
             } else {
-                document.body.style.background = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)';
-                document.body.style.color = '#333';
-                
-                // إعادة ألوان البطاقات للوضع النهاري
-                const cards = document.querySelectorAll('.card');
-                cards.forEach(card => {
-                    card.style.backgroundColor = '#f8fafc';
-                    card.style.color = '#333';
-                });
+                throw new Error('لم يتم العثور على بيانات السورة');
             }
-        }
-        
-        // التحقق من وضع الليل/النهار عند تحميل الصفحة
-        checkDayNightMode();
-        
-        // التحقق كل ساعة
-        setInterval(checkDayNightMode, 3600000);
-        
-        // إضافة ميزة الإشعارات المحلية للتذكير بالأذكار
-        function scheduleAdhkarReminders() {
-            // التحقق من دعم الإشعارات في المتصفح
-            if (!("Notification" in window)) {
-                console.log("المتصفح لا يدعم الإشعارات");
-                return;
-            }
-            
-            // طلب إذن الإشعارات
-            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        setupReminders();
-                    }
-                });
-            } else if (Notification.permission === "granted") {
-                setupReminders();
-            }
-        }
-        
-        function setupReminders() {
-            const now = new Date();
-            const hours = now.getHours();
-            
-            // إذا كان الوقت بين 5 و 7 صباحًا، قم بتذكير أذكار الصباح
-            if (hours >= 5 && hours < 7) {
-                new Notification("تذكير بأذكار الصباح", {
-                    body: "حان وقت أذكار الصباح. انقر للاطلاع عليها.",
-                    icon: "https://example.com/islam-icon.png"
-                });
-            }
-            
-            // إذا كان الوقت بين 5 و 7 مساءً، قم بتذكير أذكار المساء
-            if (hours >= 17 && hours < 19) {
-                new Notification("تذكير بأذكار المساء", {
-                    body: "حان وقت أذكار المساء. انقر للاطلاع عليها.",
-                    icon: "https://example.com/islam-icon.png"
-                });
-            }
-        }
-        
-        // محاولة جدولة التذكيرات عند تحميل الصفحة
-        scheduleAdhkarReminders();
-        
-        // جدولة التحقق من وقت الأذكار كل ساعة
-        setInterval(scheduleAdhkarReminders, 3600000);
-        
-        // إضافة ميزة حفظ عدد التسبيح في التخزين المحلي
-        function saveTasbihCount() {
-            const tasbihType = document.getElementById('tasbih-type').value;
-            localStorage.setItem('tasbihType', tasbihType);
-            localStorage.setItem('tasbihCount', tasbihCount);
-        }
-        
-        function loadTasbihCount() {
-            const savedType = localStorage.getItem('tasbihType');
-            const savedCount = localStorage.getItem('tasbihCount');
-            
-            if (savedType) {
-                document.getElementById('tasbih-type').value = savedType;
-                document.getElementById('current-tasbih').innerText = savedType;
-            }
-            
-            if (savedCount) {
-                tasbihCount = parseInt(savedCount);
-                document.getElementById('tasbih-count').innerText = tasbihCount;
-            }
-        }
-        
-        // حفظ التسبيح عند تغيير القيمة
-        document.getElementById('increment-tasbih').addEventListener('click', saveTasbihCount);
-        document.getElementById('reset-tasbih').addEventListener('click', saveTasbihCount);
-        document.getElementById('tasbih-type').addEventListener('change', saveTasbihCount);
-        
-        // تحميل قيم التسبيح المحفوظة عند بدء الصفحة
-        loadTasbihCount();
-        
-        // إضافة ميزة البحث في موقع القرآن
-        function setupQuranSearch() {
-            // إضافة حقل البحث إلى قسم القرآن
-            const quranSection = document.getElementById('quran');
-            const searchContainer = document.createElement('div');
-            searchContainer.className = 'card';
-            searchContainer.innerHTML = `
-                <h3>البحث في القرآن</h3>
-                <div class="input-container">
-                    <input type="text" id="quran-search" placeholder="ابحث عن كلمة أو آية..." />
-                    <button id="quran-search-btn" class="tasbih-btn">بحث</button>
+        } catch (error) {
+            console.error('خطأ في تحميل محتوى السورة:', error);
+            document.getElementById('surah-view').innerHTML = `
+                <div class="error-container">
+                    <p class="error-message">حدث خطأ أثناء تحميل محتوى السورة: ${error.message}</p>
+                    <button id="back-to-quran-error" class="tasbih-btn">العودة إلى قائمة السور</button>
                 </div>
             `;
             
-            quranSection.insertBefore(searchContainer, quranSection.firstChild.nextSibling);
-            
-            // إضافة وظيفة البحث
-            document.getElementById('quran-search-btn').addEventListener('click', function() {
-                const searchQuery = document.getElementById('quran-search').value.trim();
-                if (searchQuery) {
-                    window.open(`https://quran.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
-                } else {
-                    alert('الرجاء إدخال نص للبحث');
-                }
-            });
-            
-            document.getElementById('quran-search').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    document.getElementById('quran-search-btn').click();
-                }
+            document.getElementById('back-to-quran-error').addEventListener('click', function() {
+                document.getElementById('quran').classList.remove('hidden');
+                document.getElementById('surah-view').classList.add('hidden');
             });
         }
+    };
+    
+    const loadAyahTranslation = async function(surahId, ayahNumber, element) {
+        try {
+            // عرض مؤشر التحميل
+            element.innerHTML = '<div class="loader small"></div>';
+            
+            const response = await fetchWithTimeout(`${QURAN_API_BASE_URL}/ayah/${surahId}:${ayahNumber}/en.asad`, {
+                timeout: 5000
+            });
+            
+            if (!response.ok) {
+                throw new Error(`خطأ في الاستجابة: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.code === 200 && data.data) {
+                element.textContent = data.data.text;
+            } else {
+                throw new Error('لم يتم العثور على ترجمة الآية');
+            }
+        } catch (error) {
+            console.error('خطأ في تحميل ترجمة الآية:', error);
+            element.textContent = 'تعذر تحميل الترجمة';
+        }
+    };
+    
+    const playAyahAudio = function(surahId, ayahNumber) {
+        // إنشاء عنصر الصوت إذا لم يكن موجودًا
+        let audioPlayer = document.getElementById('ayah-audio-player');
+        if (!audioPlayer) {
+            audioPlayer = document.createElement('audio');
+            audioPlayer.id = 'ayah-audio-player';
+            audioPlayer.controls = true;
+            audioPlayer.className = 'audio-player';
+            
+            // إضافة عنصر الصوت إلى الصفحة
+            const audioContainer = document.createElement('div');
+            audioContainer.id = 'audio-container';
+            audioContainer.className = 'audio-container';
+            
+            const audioTitle = document.createElement('p');
+            audioTitle.id = 'audio-title';
+            audioTitle.className = 'audio-title';
+            
+            const closeAudioBtn = document.createElement('button');
+            closeAudioBtn.className = 'close-audio-btn';
+            closeAudioBtn.innerHTML = '<i class="fas fa-times"></i>';
+            closeAudioBtn.addEventListener('click', function() {
+                audioContainer.classList.add('hidden');
+                audioPlayer.pause();
+            });
+            
+            audioContainer.appendChild(audioTitle);
+            audioContainer.appendChild(audioPlayer);
+            audioContainer.appendChild(closeAudioBtn);
+            
+            document.body.appendChild(audioContainer);
+        }
         
-        // إعداد ميزة البحث في القرآن
-        setupQuranSearch();
+        // تحديث عنوان الصوت
+        const surahName = document.querySelector('.surah-header h2').textContent;
+        document.getElementById('audio-title').textContent = `سورة ${surahName} - آية ${ayahNumber}`;
+        
+        // تحديث مصدر الصوت
+        audioPlayer.src = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${(surahId - 1) * 1000 + parseInt(ayahNumber)}.mp3`;
+        
+        // إظهار مشغل الصوت
