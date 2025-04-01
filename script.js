@@ -127,71 +127,70 @@
             });
         }
         
-     // وظائف القرآن
-async function loadQuranData() {
-    try {
-        // تحميل قائمة السور
-        const surahsResponse = await fetch('https://api.quran.sutanlab.id/surah');
-        const surahsData = await surahsResponse.json();
-
-        if (surahsData) {
-            displaySurahs(surahsData.data);
-        } else {
-            throw new Error('فشل في تحميل بيانات السور');
+        // وظائف القرآن
+        async function loadQuranData() {
+            try {
+                // تحميل قائمة السور
+                const surahsResponse = await fetch('http://api.alquran.cloud/v1/surah');
+                const surahsData = await surahsResponse.json();
+                
+                if (surahsData.code === 200) {
+                    displaySurahs(surahsData.data);
+                } else {
+                    throw new Error('فشل في تحميل بيانات السور');
+                }
+                
+                // تحميل آية اليوم
+                const randomSurah = Math.floor(Math.random() * 114) + 1;
+                const ayahResponse = await fetch(`http://api.alquran.cloud/v1/ayah/${randomSurah}:1/ar`);
+                const ayahData = await ayahResponse.json();
+                
+                if (ayahData.code === 200) {
+                    document.getElementById('ayah-of-day').innerHTML = `
+                        <p class="ayah">${ayahData.data.text}</p>
+                        <p class="surah-info">سورة ${ayahData.data.surah.name} - آية ${ayahData.data.numberInSurah}</p>
+                    `;
+                } else {
+                    throw new Error('فشل في تحميل آية اليوم');
+                }
+                
+            } catch (error) {
+                console.error('Error loading Quran data:', error);
+                document.getElementById('quran-surahs').innerText = 'حدث خطأ أثناء تحميل بيانات القرآن';
+                document.getElementById('ayah-of-day').innerText = 'حدث خطأ أثناء تحميل آية اليوم';
+            }
         }
-
-        // تحميل آية اليوم
-        const randomSurah = Math.floor(Math.random() * 114) + 1;
-        const ayahResponse = await fetch(`https://api.quran.sutanlab.id/surah/${randomSurah}/1`);
-        const ayahData = await ayahResponse.json();
-
-        if (ayahData) {
-            document.getElementById('ayah-of-day').innerHTML = `
-                <p class="ayah">${ayahData.data.text.arab}</p>
-                <p class="surah-info">سورة ${ayahData.data.surah.name.transliteration.ar} - آية ${ayahData.data.number.inSurah}</p>
-            `;
-        } else {
-            throw new Error('فشل في تحميل آية اليوم');
-        }
-
-    } catch (error) {
-        console.error('Error loading Quran data:', error);
-        document.getElementById('quran-surahs').innerText = 'حدث خطأ أثناء تحميل بيانات القرآن';
-        document.getElementById('ayah-of-day').innerText = 'حدث خطأ أثناء تحميل آية اليوم';
-    }
-}
         
         function displaySurahs(surahs) {
-    const container = document.getElementById('quran-surahs');
-    container.innerHTML = '';
-
-    // إنشاء عنصر select للسور
-    const select = document.createElement('select');
-    select.className = 'tasbih-select';
-    select.id = 'surah-select';
-
-    surahs.forEach(surah => {
-        const option = document.createElement('option');
-        option.value = surah.number;
-        option.innerText = `${surah.number}. ${surah.name.transliteration.ar} - ${surah.name.translation.en}`;
-        select.appendChild(option);
-    });
-
-    container.appendChild(select);
-
-    // إضافة زر لعرض السورة
-    const button = document.createElement('button');
-    button.className = 'tasbih-btn';
-    button.style.marginTop = '10px';
-    button.innerText = 'عرض السورة';
-    button.addEventListener('click', () => {
-        const surahNumber = document.getElementById('surah-select').value;
-        window.open(`https://quran.com/${surahNumber}`, '_blank');
-    });
-
-    container.appendChild(button);
-}
-
+            const container = document.getElementById('quran-surahs');
+            container.innerHTML = '';
+            
+            // إنشاء عنصر select للسور
+            const select = document.createElement('select');
+            select.className = 'tasbih-select';
+            select.id = 'surah-select';
+            
+            surahs.forEach(surah => {
+                const option = document.createElement('option');
+                option.value = surah.number;
+                option.innerText = `${surah.number}. ${surah.name} - ${surah.englishName}`;
+                select.appendChild(option);
+            });
+            
+            container.appendChild(select);
+            
+            // إضافة زر لعرض السورة
+            const button = document.createElement('button');
+            button.className = 'tasbih-btn';
+            button.style.marginTop = '10px';
+            button.innerText = 'عرض السورة';
+            button.addEventListener('click', () => {
+                const surahNumber = document.getElementById('surah-select').value;
+                window.open(`https://quran.com/${surahNumber}`, '_blank');
+            });
+            
+            container.appendChild(button);
+        }
 // وظائف الأدعية
         async function loadDuas() {
             try {
