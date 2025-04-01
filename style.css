@@ -1,0 +1,393 @@
+ @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+
+/* الأساسيات */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Amiri', serif;
+    scroll-behavior: smooth;
+}
+
+body {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    color: #2d3748;
+    min-height: 100vh;
+    line-height: 1.8;
+    overflow-x: hidden;
+}
+
+/* الهيكل الرئيسي */
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 25px;
+    position: relative;
+}
+
+/* الهيدر */
+header {
+    background: linear-gradient(135deg, #1e3a8a, #1a365d);
+    color: #f7fafc;
+    padding: 2rem 0;
+    margin-bottom: 2.5rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+header:hover {
+    transform: translateY(-2px);
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    letter-spacing: -1px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* التنقل */
+nav {
+    margin: 2rem 0;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+}
+
+.nav-btn {
+    background: linear-gradient(135deg, #2b6cb0, #2c5282);
+    color: #ebf8ff;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 180px;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(43, 108, 176, 0.3);
+}
+
+.nav-btn.active {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    box-shadow: 0 6px 15px rgba(72, 187, 120, 0.3);
+}
+
+/* الأقسام */
+.section {
+    background: rgba(255, 255, 255, 0.98);
+    padding: 2.5rem;
+    border-radius: 15px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2.5rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    color: #2b6cb0;
+    margin-bottom: 2rem;
+    font-size: 2.2rem;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.section h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #48bb78, transparent);
+}
+
+/* البطاقات */
+.card {
+    background: linear-gradient(135deg, #2b6cb0, #3182ce);
+    color: #ebf8ff;
+    padding: 1.8rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.card:hover {
+    transform: translateY(-8px) rotate(1deg);
+    box-shadow: 0 12px 30px rgba(43, 108, 176, 0.35);
+}
+
+/* قسم التسبيح */
+.tasbih-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.tasbih-display {
+    font-size: 4.5rem;
+    font-weight: 700;
+    color: #2b6cb0;
+    margin: 1.5rem 0;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.tasbih-buttons {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.tasbih-btn {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: #f7fafc;
+    border: none;
+    padding: 1.2rem 2.5rem;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    min-width: 140px;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.tasbih-btn:hover {
+    transform: scale(1.08) rotate(-1deg);
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.3);
+}
+
+.reset-btn {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+}
+
+.reset-btn:hover {
+    box-shadow: 0 8px 20px rgba(245, 101, 101, 0.3);
+}
+
+.tasbih-select {
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 1.5rem 0;
+    font-size: 1.2rem;
+    border: 1px solid rgba(43, 108, 176, 0.3);
+    width: 85%;
+    max-width: 450px;
+    background: rgba(255, 255, 255, 0.95);
+    transition: all 0.3s ease;
+}
+
+.tasbih-select:focus {
+    border-color: #48bb78;
+    box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2);
+}
+
+/* قسم الذكاء الاصطناعي */
+#ai-section {
+    background: rgba(30, 58, 138, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+}
+
+.input-container {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+#ai-input {
+    flex: 1;
+    padding: 1.2rem;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.15);
+    color: black;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    transition: all 0.3s ease;
+}
+
+#ai-input:focus {
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2);
+}
+
+#ai-submit {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: #f7fafc;
+    border: none;
+    padding: 0 2.5rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+#ai-submit:hover {
+    transform: scale(1.05) rotate(1deg);
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.3);
+}
+
+#ai-response {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.1);
+    color: #f7fafc;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    min-height: 180px;
+    font-size: 1.25rem;
+    line-height: 1.9;
+    white-space: pre-wrap;
+}
+
+/* التحميل */
+.loader {
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top: 4px solid #48bb78;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    animation: spin 1.2s linear infinite;
+    margin: 2rem auto;
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* الفوتر */
+footer {
+    background: linear-gradient(135deg, #1a365d, #2b6cb0);
+    color: #f7fafc;
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 4rem;
+    border-radius: 15px;
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* الرسائل */
+#success-message {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: #f7fafc;
+    padding: 1.2rem;
+    border-radius: 10px;
+    margin-top: 1.5rem;
+    text-align: center;
+    display: none;
+    box-shadow: 0 6px 15px rgba(72, 187, 120, 0.3);
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* الاستجابة */
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem;
+    }
+    
+    h1 {
+        font-size: 2.5rem;
+    }
+    
+    .section {
+        padding: 2rem;
+    }
+    
+    .nav-btn {
+        min-width: 160px;
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .tasbih-display {
+        font-size: 3.5rem;
+    }
+    
+    #ai-response {
+    color: #000000;
+    background-color: rgba(255, 255, 255, 0.9); /* خلفية بيضاء شبه شفافة */
+    padding: 15px;
+    border-radius: 8px;
+}
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .tasbih-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .tasbih-btn {
+        width: 100%;
+    }
+    
+    .input-container {
+        flex-direction: column;
+    }
+    
+    #ai-submit {
+        padding: 1rem;
+        width: 100%;
+    }
+    
+    .section {
+        padding: 1.5rem;
+    }
+    
+    .card {
+        padding: 1.2rem;
+    }
+}
+
+/* تحسينات إضافية */
+::-webkit-scrollbar {
+    width: 8px;
+    background: #e2e8f0;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2b6cb0;
+    border-radius: 4px;
+}
+
+::selection {
+    background: #48bb78;
+    color: white;
+}
+
+:focus {
+    outline: 3px solid rgba(72, 187, 120, 0.4);
+    outline-offset: 2px;
+}
