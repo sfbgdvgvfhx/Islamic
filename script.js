@@ -127,70 +127,314 @@
             });
         }
         
-        // وظائف القرآن
-        async function loadQuranData() {
-            try {
-                // تحميل قائمة السور
-                const surahsResponse = await fetch('http://api.alquran.cloud/v1/surah');
-                const surahsData = await surahsResponse.json();
-                
-                if (surahsData.code === 200) {
-                    displaySurahs(surahsData.data);
-                } else {
-                    throw new Error('فشل في تحميل بيانات السور');
-                }
-                
-                // تحميل آية اليوم
-                const randomSurah = Math.floor(Math.random() * 114) + 1;
-                const ayahResponse = await fetch(`http://api.alquran.cloud/v1/ayah/${randomSurah}:1/ar`);
-                const ayahData = await ayahResponse.json();
-                
-                if (ayahData.code === 200) {
-                    document.getElementById('ayah-of-day').innerHTML = `
-                        <p class="ayah">${ayahData.data.text}</p>
-                        <p class="surah-info">سورة ${ayahData.data.surah.name} - آية ${ayahData.data.numberInSurah}</p>
-                    `;
-                } else {
-                    throw new Error('فشل في تحميل آية اليوم');
-                }
-                
-            } catch (error) {
-                console.error('Error loading Quran data:', error);
-                document.getElementById('quran-surahs').innerText = 'حدث خطأ أثناء تحميل بيانات القرآن';
-                document.getElementById('ayah-of-day').innerText = 'حدث خطأ أثناء تحميل آية اليوم';
-            }
+     // وظائف القرآن
+async function loadQuranData() {
+    try {
+        // استخدام API أكثر موثوقية للقرآن
+        const surahsResponse = await fetch('https://api.quran.gading.dev/surah');
+        const surahsData = await surahsResponse.json();
+        
+        if (surahsData.code === 200 || surahsData.status === 'OK') {
+            displaySurahs(surahsData.data);
+        } else {
+            throw new Error('فشل في تحميل بيانات السور');
         }
         
-        function displaySurahs(surahs) {
-            const container = document.getElementById('quran-surahs');
-            container.innerHTML = '';
+        // تحميل آية اليوم من API موثوقة
+        await loadAyahOfDay();
+        
+        // تهيئة قسم التلاوة
+        setupQuranPlayer();
+        
+    } catch (error) {
+        console.error('Error loading Quran data:', error);
+        document.getElementById('quran-surahs').innerHTML = `
+            <div class="card">
+                <p>حدث خطأ أثناء تحميل بيانات القرآن</p>
+                <button class="tasbih-btn" onclick="loadQuranData()">إعادة المحاولة</button>
+            </div>
+        `;
+        document.getElementById('ayah-of-day').innerHTML = `
+            <div class="card">
+                <p>حدث خطأ أثناء تحميل آية اليوم</p>
+            </div>
+        `;
+    }
+}
+
+// عرض قائمة السور مع تحسينات في الواجهة
+function displaySurahs(surahs) {
+    const container = document.getElementById('quran-surahs');
+    container.innerHTML = '';
+    
+    // إنشاء بطاقة لاختيار السورة
+    const surahCard = document.createElement('div');
+    surahCard.className = 'card';
+    surahCard.innerHTML = `
+        <h3>استعراض سور القرآن الكريم</h3>
+        <div class="select-container">
+            <select class="tasbih-select" id="surah-select">
+                <option value="" disabled selected>اختر سورة...</option>
+            </select>
+        </div>
+        <div class="buttons-container" style="display:flex; gap:10px; margin-top:10px;">
+            <button class="tasbih-btn" id="view-surah-btn">عرض السورة</button>
+            <button class="tasbih-btn" id="view-tafseer-btn">التفسير</button>
+        </div>
+    `;
+    
+    container.appendChild(surahCard);
+    
+    // إضافة السور إلى القائمة المنسدلة
+    const select = document.getElementById('surah-select');
+    
+    surahs.forEach(surah => {
+        const option = document.createElement('option');
+        option.value = surah.number;
+        option.innerText = `${surah.number}. ${surah.name} - ${surah.englishName}`;
+        select.appendChild(option);
+    });
+    
+    // إضافة حدث النقر على زر عرض السورة
+    document.getElementById('view-surah-btn').addEventListener('click', () => {
+        const surahNumber = document.getElementById('surah-select').value;
+        if (surahNumber) {
+            window.open(`https://quran.com/${surahNumber}`, '_blank');
+        } else {
+            alert('الرجاء اختيار سورة أولاً');
+        }
+    });
+    
+    // إضافة حدث النقر على زر التفسير
+    document.getElementById('view-tafseer-btn').addEventListener('click', () => {
+        const surahNumber = document.getElementById('surah-select').value;
+        if (surahNumber) {
+            window.open(`https://quran.ksu.edu.sa/tafseer/katheer/${surahNumber}.html`, '_blank');
+        } else {
+            alert('الرجاء اختيار سورة أولاً');
+        }
+    });
+    
+    // إضافة قسم لعرض المعلومات عن السورة المختارة
+    const surahInfoCard = document.createElement('div');
+    surahInfoCard.className = 'card';
+    surahInfoCard.id = 'surah-info-card';
+    surahInfoCard.innerHTML = `
+        <h3>معلومات عن السورة</h3>
+        <div id="surah-info">
+            <p>اختر سورة لعرض معلوماتها</p>
+        </div>
+    `;
+    container.appendChild(surahInfoCard);
+    
+    // إضافة حدث لعرض معلومات السورة عند اختيارها
+    select.addEventListener('change', async () => {
+        const surahNumber = select.value;
+        if (surahNumber) {
+            try {
+                const surahResponse = await fetch(`https://api.quran.gading.dev/surah/${surahNumber}`);
+                const surahData = await surahResponse.json();
+                
+                if (surahData.code === 200 || surahData.status === 'OK') {
+                    const surah = surahData.data;
+                    const infoDiv = document.getElementById('surah-info');
+                    infoDiv.innerHTML = `
+                        <p><strong>اسم السورة:</strong> ${surah.name} (${surah.englishName})</p>
+                        <p><strong>معنى الاسم:</strong> ${surah.englishNameTranslation}</p>
+                        <p><strong>عدد الآيات:</strong> ${surah.numberOfAyahs}</p>
+                        <p><strong>ترتيب النزول:</strong> ${surah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}</p>
+                        <p><strong>الجزء:</strong> ${Math.ceil(surah.number / 4)}</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading surah info:', error);
+                document.getElementById('surah-info').innerHTML = `
+                    <p>حدث خطأ أثناء تحميل معلومات السورة</p>
+                `;
+            }
+        }
+    });
+}
+
+// وظيفة آية اليوم المحسنة
+async function loadAyahOfDay() {
+    try {
+        // اختيار سورة وآية بشكل عشوائي
+        const randomSurah = Math.floor(Math.random() * 114) + 1;
+        
+        // الحصول على معلومات السورة أولاً
+        const surahResponse = await fetch(`https://api.quran.gading.dev/surah/${randomSurah}`);
+        const surahData = await surahResponse.json();
+        
+        if (surahData.code === 200 || surahData.status === 'OK') {
+            // اختيار آية عشوائية من السورة
+            const maxAyah = surahData.data.numberOfAyahs;
+            const randomAyah = Math.floor(Math.random() * maxAyah) + 1;
             
-            // إنشاء عنصر select للسور
-            const select = document.createElement('select');
-            select.className = 'tasbih-select';
-            select.id = 'surah-select';
+            // الحصول على الآية
+            const ayahResponse = await fetch(`https://api.quran.gading.dev/surah/${randomSurah}/ayah/${randomAyah}`);
+            const ayahData = await ayahResponse.json();
             
-            surahs.forEach(surah => {
+            if (ayahData.code === 200 || ayahData.status === 'OK') {
+                const ayahContainer = document.getElementById('ayah-of-day');
+                
+                ayahContainer.innerHTML = `
+                    <div class="card">
+                        <h3>آية اليوم</h3>
+                        <p class="ayah" style="font-size: 1.2rem; line-height: 2; text-align: center;">${ayahData.data.text.arab}</p>
+                        <p class="surah-info" style="text-align: center;">سورة ${surahData.data.name} - آية ${randomAyah}</p>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <audio id="ayah-player" controls>
+                                <source src="${ayahData.data.audio.primary || ayahData.data.audio.secondary}" type="audio/mpeg">
+                                المتصفح لا يدعم تشغيل الصوت
+                            </audio>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading Ayah of the day:', error);
+        document.getElementById('ayah-of-day').innerHTML = `
+            <div class="card">
+                <h3>آية اليوم</h3>
+                <p>حدث خطأ أثناء تحميل آية اليوم</p>
+                <button class="tasbih-btn" onclick="loadAyahOfDay()">إعادة المحاولة</button>
+            </div>
+        `;
+    }
+}
+
+// إضافة مشغل القرآن
+function setupQuranPlayer() {
+    // إنشاء بطاقة للمشغل
+    const quranSection = document.getElementById('quran');
+    const playerCard = document.createElement('div');
+    playerCard.className = 'card';
+    playerCard.id = 'quran-player-card';
+    
+    playerCard.innerHTML = `
+        <h3>استماع للقرآن الكريم</h3>
+        <div class="select-container">
+            <select class="tasbih-select" id="reciter-select">
+                <option value="" disabled selected>اختر القارئ...</option>
+                <option value="Alafasy_64kbps">مشاري العفاسي</option>
+                <option value="AbdulSamad_64kbps">عبد الباسط عبد الصمد</option>
+                <option value="Minshawy_Murattal_64kbps">محمد صديق المنشاوي</option>
+                <option value="Husary_64kbps">محمود خليل الحصري</option>
+                <option value="Ghamadi_40kbps">سعد الغامدي</option>
+            </select>
+        </div>
+        
+        <div class="select-container" style="margin-top: 10px;">
+            <select class="tasbih-select" id="player-surah-select">
+                <option value="" disabled selected>اختر سورة للاستماع...</option>
+            </select>
+        </div>
+        
+        <div style="text-align: center; margin-top: 15px;">
+            <audio id="quran-audio-player" controls style="width: 100%;">
+                <source id="quran-audio-source" src="" type="audio/mpeg">
+                المتصفح لا يدعم تشغيل الصوت
+            </audio>
+        </div>
+    `;
+    
+    // إضافة البطاقة إلى قسم القرآن (بعد بطاقة آية اليوم)
+    const ayahContainer = document.getElementById('ayah-of-day');
+    quranSection.insertBefore(playerCard, ayahContainer.nextSibling);
+    
+    // إضافة قائمة السور للمشغل
+    fetchSurahsList();
+    
+    // إضافة أحداث للمشغل
+    document.getElementById('player-surah-select').addEventListener('change', updateAudioSource);
+    document.getElementById('reciter-select').addEventListener('change', updateAudioSource);
+}
+
+// الحصول على قائمة السور للمشغل
+async function fetchSurahsList() {
+    try {
+        const response = await fetch('https://api.quran.gading.dev/surah');
+        const data = await response.json();
+        
+        if (data.code === 200 || data.status === 'OK') {
+            const select = document.getElementById('player-surah-select');
+            
+            data.data.forEach(surah => {
                 const option = document.createElement('option');
-                option.value = surah.number;
+                option.value = surah.number.toString().padStart(3, '0');
                 option.innerText = `${surah.number}. ${surah.name} - ${surah.englishName}`;
                 select.appendChild(option);
             });
-            
-            container.appendChild(select);
-            
-            // إضافة زر لعرض السورة
-            const button = document.createElement('button');
-            button.className = 'tasbih-btn';
-            button.style.marginTop = '10px';
-            button.innerText = 'عرض السورة';
-            button.addEventListener('click', () => {
-                const surahNumber = document.getElementById('surah-select').value;
-                window.open(`https://quran.com/${surahNumber}`, '_blank');
-            });
-            
-            container.appendChild(button);
         }
+    } catch (error) {
+        console.error('Error fetching surahs list for player:', error);
+    }
+}
+
+// تحديث مصدر الصوت بناءً على الاختيارات
+function updateAudioSource() {
+    const reciter = document.getElementById('reciter-select').value;
+    const surah = document.getElementById('player-surah-select').value;
+    
+    if (reciter && surah) {
+        const audioSource = document.getElementById('quran-audio-source');
+        const audioPlayer = document.getElementById('quran-audio-player');
+        
+        // استخدام CDN للقرآن الكريم
+        audioSource.src = `https://download.quranicaudio.com/quran/${reciter}/${surah}.mp3`;
+        audioPlayer.load();
+    }
+}
+
+// تحسين وظيفة البحث في القرآن
+function setupQuranSearch() {
+    // إضافة حقل البحث إلى قسم القرآن
+    const quranSection = document.getElementById('quran');
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'card';
+    searchContainer.innerHTML = `
+        <h3>البحث في القرآن</h3>
+        <div class="input-container">
+            <input type="text" id="quran-search" placeholder="ابحث عن كلمة أو آية..." />
+            <button id="quran-search-btn" class="tasbih-btn">بحث</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>
+                <input type="radio" name="search-type" value="arabic" checked> بحث عربي
+            </label>
+            <label style="margin-right: 15px;">
+                <input type="radio" name="search-type" value="translation"> بحث في الترجمة
+            </label>
+        </div>
+    `;
+    
+    quranSection.insertBefore(searchContainer, quranSection.firstChild);
+    
+    // إضافة وظيفة البحث
+    document.getElementById('quran-search-btn').addEventListener('click', function() {
+        const searchQuery = document.getElementById('quran-search').value.trim();
+        const searchType = document.querySelector('input[name="search-type"]:checked').value;
+        
+        if (searchQuery) {
+            if (searchType === 'arabic') {
+                window.open(`https://quran.com/search?q=${encodeURIComponent(searchQuery)}&language=ar`, '_blank');
+            } else {
+                window.open(`https://quran.com/search?q=${encodeURIComponent(searchQuery)}&language=en`, '_blank');
+            }
+        } else {
+            alert('الرجاء إدخال نص للبحث');
+        }
+    });
+    
+    document.getElementById('quran-search').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('quran-search-btn').click();
+        }
+    });
+}
+
 // وظائف الأدعية
         async function loadDuas() {
             try {
@@ -446,5 +690,4 @@
             });
         }
         
-        // إعداد ميزة البحث في القرآن
-        setupQuranSearch();
+       
