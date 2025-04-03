@@ -127,7 +127,70 @@
             });
         }
         
-                       }
+        // وظائف القرآن
+        async function loadQuranData() {
+            try {
+                // تحميل قائمة السور
+                const surahsResponse = await fetch('http://api.alquran.cloud/v1/surah');
+                const surahsData = await surahsResponse.json();
+                
+                if (surahsData.code === 200) {
+                    displaySurahs(surahsData.data);
+                } else {
+                    throw new Error('فشل في تحميل بيانات السور');
+                }
+                
+                // تحميل آية اليوم
+                const randomSurah = Math.floor(Math.random() * 114) + 1;
+                const ayahResponse = await fetch(`http://api.alquran.cloud/v1/ayah/${randomSurah}:1/ar`);
+                const ayahData = await ayahResponse.json();
+                
+                if (ayahData.code === 200) {
+                    document.getElementById('ayah-of-day').innerHTML = `
+                        <p class="ayah">${ayahData.data.text}</p>
+                        <p class="surah-info">سورة ${ayahData.data.surah.name} - آية ${ayahData.data.numberInSurah}</p>
+                    `;
+                } else {
+                    throw new Error('فشل في تحميل آية اليوم');
+                }
+                
+            } catch (error) {
+                console.error('Error loading Quran data:', error);
+                document.getElementById('quran-surahs').innerText = 'حدث خطأ أثناء تحميل بيانات القرآن';
+                document.getElementById('ayah-of-day').innerText = 'حدث خطأ أثناء تحميل آية اليوم';
+            }
+        }
+        
+        function displaySurahs(surahs) {
+            const container = document.getElementById('quran-surahs');
+            container.innerHTML = '';
+            
+            // إنشاء عنصر select للسور
+            const select = document.createElement('select');
+            select.className = 'tasbih-select';
+            select.id = 'surah-select';
+            
+            surahs.forEach(surah => {
+                const option = document.createElement('option');
+                option.value = surah.number;
+                option.innerText = `${surah.number}. ${surah.name} - ${surah.englishName}`;
+                select.appendChild(option);
+            });
+            
+            container.appendChild(select);
+            
+            // إضافة زر لعرض السورة
+            const button = document.createElement('button');
+            button.className = 'tasbih-btn';
+            button.style.marginTop = '10px';
+            button.innerText = 'عرض السورة';
+            button.addEventListener('click', () => {
+                const surahNumber = document.getElementById('surah-select').value;
+                window.open(`https://quran.com/${surahNumber}`, '_blank');
+            });
+            
+            container.appendChild(button);
+        }
 // وظائف الأدعية
         async function loadDuas() {
             try {
@@ -331,4 +394,57 @@
             const savedType = localStorage.getItem('tasbihType');
             const savedCount = localStorage.getItem('tasbihCount');
             
+            if (savedType) {
+                document.getElementById('tasbih-type').value = savedType;
+                document.getElementById('current-tasbih').innerText = savedType;
+            }
             
+            if (savedCount) {
+                tasbihCount = parseInt(savedCount);
+                document.getElementById('tasbih-count').innerText = tasbihCount;
+            }
+        }
+        
+        // حفظ التسبيح عند تغيير القيمة
+        document.getElementById('increment-tasbih').addEventListener('click', saveTasbihCount);
+        document.getElementById('reset-tasbih').addEventListener('click', saveTasbihCount);
+        document.getElementById('tasbih-type').addEventListener('change', saveTasbihCount);
+        
+        // تحميل قيم التسبيح المحفوظة عند بدء الصفحة
+        loadTasbihCount();
+        
+        // إضافة ميزة البحث في موقع القرآن
+        function setupQuranSearch() {
+            // إضافة حقل البحث إلى قسم القرآن
+            const quranSection = document.getElementById('quran');
+            const searchContainer = document.createElement('div');
+            searchContainer.className = 'card';
+            searchContainer.innerHTML = `
+                <h3>البحث في القرآن</h3>
+                <div class="input-container">
+                    <input type="text" id="quran-search" placeholder="ابحث عن كلمة أو آية..." />
+                    <button id="quran-search-btn" class="tasbih-btn">بحث</button>
+                </div>
+            `;
+            
+            quranSection.insertBefore(searchContainer, quranSection.firstChild.nextSibling);
+            
+            // إضافة وظيفة البحث
+            document.getElementById('quran-search-btn').addEventListener('click', function() {
+                const searchQuery = document.getElementById('quran-search').value.trim();
+                if (searchQuery) {
+                    window.open(`https://quran.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+                } else {
+                    alert('الرجاء إدخال نص للبحث');
+                }
+            });
+            
+            document.getElementById('quran-search').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('quran-search-btn').click();
+                }
+            });
+        }
+        
+        // إعداد ميزة البحث في القرآن
+        setupQuranSearch();
